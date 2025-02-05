@@ -1,0 +1,13 @@
+.env               # Environment variables (keep these secret!)
+__pycache__/        # Python bytecode cache
+*.pyc              # More Python bytecode files
+venv/               # Your virtual environment directory (or whatever you named it)
+new_venv/           # The *new* virtual environment we created for testing
+*.log               # Log files (if you have any)
+*.tmp               # Temporary files
+.DS_Store          # macOS Finder store files
+Thumbs.db           # Windows thumbnail cache
+.idea/              # IntelliJ IDEA project files
+.vscode/            # VS Code project files
+*.swp               # Swap files (e.g., from Vim)
+*~                  # Backup files (e.g., from editors)

@@ -1,0 +1,10 @@
+pandas
+openpyxl
+python-magic
+nltk
+spacy
+openai==0.28.0
+requests 
+tqdm
+python-dotenv
+PyPDF2
