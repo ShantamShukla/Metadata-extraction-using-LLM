@@ -1,3 +1,5 @@
+
+
 ---
 
 # **Metadata Extractor: LLM-Enhanced Data Abstraction**
@@ -104,7 +106,9 @@ The pipeline produces a **JSON** structure containing:
 - **Summarized text** (PDF/TXT) or **data insights** (Excel/CSV)
 
 ### **Example** (Excel)
-![Result on streamlite](Screenshots of result\Screenshot 2025-02-06 210619.png)
+
+![Result](Screenshots%20of%20result/Screenshot%202025-02-06%20210619.png)
+
 ---
 
 ## **Contact**
