@@ -1,18 +1,13 @@
+# data_extraction.py
 import logging
 import pandas as pd
-import PyPDF2 
+import PyPDF2
 
 logger = logging.getLogger(__name__)
 
 def extract_text_data(file_path: str) -> str:
     """
     Extract raw text from a text file.
-
-    Args:
-        file_path (str): Path to the text file.
-
-    Returns:
-        str: The entire text content.
     """
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -23,16 +18,9 @@ def extract_text_data(file_path: str) -> str:
         logger.error(f"Error reading text file {file_path}: {e}")
         return ""
 
-def extract_excel_data(file_path: str):
+def extract_excel_data(file_path: str) -> pd.DataFrame:
     """
-    Extract data from an Excel file using pandas.
-    Reads the first sheet with no header.
-
-    Args:
-        file_path (str): Path to the Excel file.
-
-    Returns:
-        pd.DataFrame: Pandas DataFrame with the file's contents.
+    Extract data from an Excel file using pandas (header=None).
     """
     try:
         df = pd.read_excel(file_path, sheet_name=0, header=None)
@@ -42,16 +30,9 @@ def extract_excel_data(file_path: str):
         logger.error(f"Error reading Excel file {file_path}: {e}")
         return pd.DataFrame()
 
-def extract_csv_data(file_path: str):
+def extract_csv_data(file_path: str) -> pd.DataFrame:
     """
-    Extract data from a CSV file using pandas.
-    Reads with no header.
-
-    Args:
-        file_path (str): Path to the CSV file.
-
-    Returns:
-        pd.DataFrame: Pandas DataFrame with the file's contents.
+    Extract data from a CSV file using pandas (header=None).
     """
     try:
         df = pd.read_csv(file_path, header=None)
@@ -70,7 +51,6 @@ def extract_pdf_data(file_path: str) -> str:
     try:
         with open(file_path, 'rb') as f:
             pdf_reader = PyPDF2.PdfReader(f)
-            # For older versions of PyPDF2, pages might be read differently
             for page in pdf_reader.pages:
                 extracted = page.extract_text() or ""
                 text_content.append(extracted)

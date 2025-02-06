@@ -1,3 +1,4 @@
+# file_detection.py
 import logging
 import os
 
@@ -8,18 +9,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 def detect_file_type(file_path: str) -> str:
     """
     Detect file type using python-magic if available.
     Fallback to extension-based detection if magic is not installed or fails.
-
-    Args:
-        file_path (str): Path to the file to inspect.
-
-    Returns:
-        str: A string representing the detected file type
-             (e.g., "text", "excel", "csv", or "unknown").
     """
     if not os.path.isfile(file_path):
         logger.error(f"File does not exist: {file_path}")
@@ -28,8 +21,10 @@ def detect_file_type(file_path: str) -> str:
     if magic is not None:
         try:
             mime = magic.from_file(file_path, mime=True)
-            logger.info(f"MIME type detected: {mime}")
-            if "text" in mime:
+            logger.info(f"MIME type detected for {file_path}: {mime}")
+            if "pdf" in mime:
+                return "pdf"
+            elif "text" in mime:
                 return "text"
             elif "excel" in mime or "spreadsheet" in mime:
                 return "excel"
@@ -49,7 +44,7 @@ def detect_file_type(file_path: str) -> str:
         return "excel"
     elif ext == ".csv":
         return "csv"
-    elif ext in [".pdf"]:
+    elif ext == ".pdf":
         return "pdf"
     else:
         return "unknown"

@@ -1,30 +1,25 @@
 import logging
 import json
 import openai
-# import google.generativeai as palm  # Hypothetical import
-
-# from config import GEMINI_API_KEY 
+import pandas as pd
+from typing import List
+import re
 from config import OPENAI_API_KEY
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------
+# OpenAI API Config
+# ---------------------------------------------------------------------
+openai.api_key = OPENAI_API_KEY
+
 def call_llm(prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 600) -> str:
     """
-    Call an OpenAI ChatCompletion API.
-
-    Args:
-        prompt (str): The text prompt for the LLM.
-        model (str): Which model to use.
-        max_tokens (int): Maximum tokens in the response.
-
-    Returns:
-        str: The LLM-generated response as a string.
+    Generic helper to call the OpenAI ChatCompletion API.
     """
     if not OPENAI_API_KEY:
-        logger.error("OpenAI API Key not set. Cannot call LLM.")
+        logger.error("OPENAI_API_KEY not set. Cannot call LLM.")
         return ""
-
-    openai.api_key = OPENAI_API_KEY
 
     try:
         response = openai.ChatCompletion.create(
@@ -42,44 +37,10 @@ def call_llm(prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 600) -> 
         logger.error(f"LLM call failed: {e}")
         return ""
 
-# palm.configure(api_key=GEMINI_API_KEY)
-
-# def call_gemini(prompt: str, model: str = "models/chat-bison-001", temperature: float = 0.0, max_output_tokens: int = 200) -> str:
-#     """Call the Gemini API."""
-#     try:
-#         response = palm.generate_text(
-#             model=model,
-#             prompt=prompt,
-#             temperature=temperature,
-#             max_output_tokens=max_output_tokens
-#         )
-
-#         if response.result:
-#             output = response.result
-#             logger.debug(f"Gemini response: {output}")
-#             return output
-#         else:
-#             logger.warning("Gemini response was empty.")
-#             return ""
-
-#     except Exception as e:
-#         logger.exception(f"Gemini call failed: {e}")  # Log the full exception details
-#         return ""
-
-# def call_llm(prompt: str, model: str = "models/chat-bison-001", max_output_tokens: int = 200) -> str:
-#     return call_gemini(prompt, model, max_output_tokens)
-
 def infer_schema_with_llm(sample_rows, model: str = "gpt-4o-mini") -> str:
-# def infer_schema_with_llm(sample_rows, model: str = "models/chat-bison-001") -> str:
     """
     Prompt the LLM to suggest headers/column names for a table without headers.
-
-    Args:
-        sample_rows (list): List of lists representing rows of data.
-        model (str): Which model to use.
-
-    Returns:
-        str: JSON-encoded list of suggested column headers (if successful).
+    Returns a JSON-encoded list of suggested column headers (if successful).
     """
     prompt = f"""
 The following data rows do not have headers:
@@ -89,22 +50,12 @@ Suggest likely column headers (one per column), and return ONLY a JSON list of s
 For example: ["ID", "Name", "Date", "Amount"].
 """
     schema_suggestion = call_llm(prompt, model=model, max_tokens=3000)
-    # schema_suggestion = call_llm(prompt, model=model, max_output_tokens=200)
-    # schema_suggestion = call_llm(prompt, model=model)
     return schema_suggestion
-    # return schema_suggestion
 
 def summarize_text_with_llm(cleaned_text: str, model: str = "gpt-4o-mini") -> str:
-# def summarize_text_with_llm(cleaned_text: str, model: str = "models/chat-bison-001") -> str:
     """
-    Summarize large text using an LLM.
-
-    Args:
-        cleaned_text (str): Preprocessed text.
-        model (str): Which model to use.
-
-    Returns:
-        str: Summary text.
+    Summarize large text using an LLM (single-call approach).
+    If text is extremely large, you may still risk token-limit errors.
     """
     if len(cleaned_text) < 10:
         return "No meaningful text to summarize."
@@ -114,27 +65,16 @@ Summarize the following text in a concise, high-level manner:
 {cleaned_text}
 """
     summary = call_llm(prompt, model=model, max_tokens=3000)
-    # summary = call_llm(prompt, model=model)
     return summary
 
 def generate_data_insights_with_llm(df, model: str = "gpt-4o-mini") -> str:
-# def generate_data_insights_with_llm(df, model: str = "models/chat-bison-001") -> str: 
     """
     Provide a high-level analysis of a DataFrame using an LLM.
-
-    Args:
-        df (pd.DataFrame): DataFrame to analyze.
-        model (str): Which model to use.
-
-    Returns:
-        str: Text of data insights.
     """
     if df.empty:
         return "No data available for analysis."
 
-    # Convert a small portion of the data to CSV or JSON for context
     sample_str = df.head(5).to_csv(index=False)
-
     prompt = f"""
 Below is a sample of tabular data (up to 5 rows). Provide a high-level analysis:
 {sample_str}
@@ -145,5 +85,84 @@ Potential areas to address:
 - Potential relationships
 """
     analysis = call_llm(prompt, model=model, max_tokens=3000)
-    # analysis = call_llm(prompt, model=model)
     return analysis
+
+# ---------------------------------------------------------------------
+# Chunking + Large-Text Summaries (to avoid token limit issues)
+# ---------------------------------------------------------------------
+# def chunk_text(text: str, chunk_size: int = 3000) -> List[str]:
+#     """
+#     Splits 'text' into chunks of approximately 'chunk_size' characters
+#     to avoid exceeding token limits in a single LLM call.
+#     """
+#     words = text.split()
+#     chunks = []
+#     current_chunk = []
+#     current_length = 0
+
+#     for word in words:
+#         current_chunk.append(word)
+#         current_length += len(word) + 1  # +1 for space
+#         if current_length >= chunk_size:
+#             chunks.append(" ".join(current_chunk))
+#             current_chunk = []
+#             current_length = 0
+
+#     if current_chunk:
+#         chunks.append(" ".join(current_chunk))
+
+#     return chunks
+
+# def summarize_large_text(full_text: str, model: str = "gpt-4o-mini") -> str:
+#     """
+#     Breaks the 'full_text' into smaller chunks, summarizes each chunk with
+#     'summarize_text_with_llm()', then combines partial summaries for a final result.
+#     """
+#     chunks = chunk_text(full_text, chunk_size=3000)
+#     if not chunks:
+#         return "No meaningful text to summarize."
+
+#     partial_summaries = []
+#     for i, chunk_data in enumerate(chunks):
+#         partial_summary = summarize_text_with_llm(chunk_data, model=model)
+#         partial_summaries.append(f"Chunk {i+1} Summary:\n{partial_summary}")
+
+#     combined_prompt = (
+#         "Combine the following partial summaries into a single, concise overview:\n\n"
+#         + "\n\n".join(partial_summaries)
+#     )
+#     final_summary = call_llm(combined_prompt, model=model, max_tokens=1000)
+#     return final_summary
+
+def detect_chapters(text: str) -> list:
+    """
+    Splits 'text' by lines containing 'Chapter <digits>' or 'CHAPTER <digits>'.
+    If multiple chapters are found, returns them as separate sections.
+    Otherwise returns a single-element list (the entire text).
+    """
+    # A naive regex looking for lines that start with 'Chapter <digits>'
+    chapters = re.split(r'(?i)(?:^|\n)chapter\s+\d+', text)
+    # If we only got 1 chunk, it means no real chapters were found
+    return chapters if len(chapters) > 1 else [text]
+
+def summarize_chapters(text: str, model: str = "gpt-4o-mini") -> list:
+    """
+    Detects 'Chapter' headings and summarizes each as a separate piece.
+    If there's only one piece (no chapters), we'll rely on pipeline fallback.
+    """
+    sections = detect_chapters(text)
+    summaries = []
+
+    # If there's only 1 'section', it's effectively the entire doc
+    if len(sections) == 1:
+        return summaries  # We do no chunking or multi-summaries here
+
+    # Summarize each chapter
+    for i, chapter_text in enumerate(sections, start=1):
+        # skip trivial lines
+        if len(chapter_text.strip()) < 50:
+            continue
+        summary = summarize_text_with_llm(chapter_text, model=model)
+        summaries.append(f"Chapter {i} Summary:\n{summary}")
+
+    return summaries
