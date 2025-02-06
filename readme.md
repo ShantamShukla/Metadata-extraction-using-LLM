@@ -116,5 +116,3 @@ The pipeline produces a **JSON** structure containing:
 For questions or suggestions, please **open an issue** in the [GitHub repository](https://github.com/ShantamShukla/Metadata-Extractor).
 
 ---
-
-### **Enjoy using the Metadata Extractor!** Feel free to enhance it with additional NLP features or integrate it into your data processing pipelines.
